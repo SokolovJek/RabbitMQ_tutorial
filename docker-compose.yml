@@ -1,0 +1,9 @@
+services:
+    rabbitmq:
+      build:
+        dockerfile: dockerfile
+      ports:
+        - "5672:5672"
+        - "8080:15672"
+      container_name: some-rabbit
+

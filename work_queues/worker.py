@@ -22,7 +22,7 @@ def main():
     # channel.basic_consume('hello', auto_ack=True, on_message_callback=callback)
 
     # будем вручную подтверждать прием и обработку сообщения в callback функции
-    channel.basic_consume('task_queue', on_message_callback=callback)
+    channel.basic_consume('task_queue', auto_ack=False, on_message_callback=callback)
 
     print(' [*] Waiting for messages. To exit press CTRL+C')
     channel.start_consuming()

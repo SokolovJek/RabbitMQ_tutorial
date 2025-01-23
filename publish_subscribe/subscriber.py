@@ -4,14 +4,7 @@ import time
 import sys
 
 
-def callback(ch, method, properties, body):
-    print(f" [*] Received {body.decode()}, count({body.count(b'.')})")
-    time.sleep(body.count(b'.'))
-    # ch.basic_ack(delivery_tag=method.delivery_tag) # отправляем в очередь подтверждение что мы обработали сообщение
-    print(" [*] Done")
-
-
-def main():
+def main(log_file=''):
     connections = pika.BlockingConnection(
         pika.ConnectionParameters('localhost'))
     channel = connections.channel()
@@ -19,6 +12,7 @@ def main():
     channel.exchange_declare(
         exchange='logs',
         exchange_type='fanout')
+
     result = channel.queue_declare(
         queue='',                        # указываем чтобы rabbit сам генерировал название очереди
         exclusive=True                   # после отключения Consumer очередь будет удаленна
@@ -31,6 +25,16 @@ def main():
         exchange='logs'                 # имя ОБМЕННИКОМ
     )
 
+    def callback(ch, method, properties, body, logging=log_file):
+        msg = f"{time.time()}: [*] Received {body.decode()}, count({body.count(b'.')})\n"
+        if log_file:
+            with open(log_file[0], 'a') as f:
+                f.writelines(msg)
+        else:
+            print(print(msg))
+        time.sleep(body.count(b'.'))
+        print(" [*] Done")
+
     channel.basic_consume(
         queue=queue_name,
         auto_ack=True,                  # указываем что consumer не будет подтверждать обработку сообщения
@@ -42,7 +46,8 @@ def main():
 if __name__ == "__main__":
     try:
         print(' [*] Waiting for logs. To exit press CTRL+C')
-        main()
+        path_log_file = sys.argv[1:]
+        main(path_log_file)
     except KeyboardInterrupt:
         print('Interrupted')
         try:

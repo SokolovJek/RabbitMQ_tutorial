@@ -94,6 +94,6 @@ rabbitmqctl list_bindings
    - docker-compose up --build
    - python .\publish_subscribe\subscriber.py                               # consumer1
    - python .\publish_subscribe\subscriber.py                               # consumer2
-   - python .\publish_subscribe\subscriber.py > logs_from_rabbit.log        # consumer3
+   - python .\publish_subscribe\subscriber.py logs_from_rabbit.log        # consumer3
    - python .\publish_subscribe\publisher.py <message>                      # где количество точек в message устанавливает задержку времени в секундах которое worker будет ожидать.
    ```

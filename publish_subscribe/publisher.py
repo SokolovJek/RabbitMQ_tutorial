@@ -12,13 +12,11 @@ def main(message):
 
     channel.exchange_declare(
         exchange='logs',                                       # указываем обменник
-        # указываем тип обменника
-        exchange_type='fanout'
+        exchange_type='fanout'                                 # указываем тип обменника
     )
     channel.basic_publish(
         exchange='logs',                                       # указываем имя Обменника
-        # не указываем очередь т.к. будет Обменник
-        routing_key='',
+        routing_key='',                                        # не указываем очередь т.к. будет Обменник
         body=message
     )
     print(f" [*] Sent {message}")

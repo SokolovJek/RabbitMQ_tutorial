@@ -53,9 +53,10 @@ rabbitmqctl list_bindings
    ```
 
    ```
-   - docker-compose up --build
-   - python .\hello_world\receive.py
-   - python .\hello_world\send.py
+   docker-compose up --build
+   .\env\Scripts\Activate.ps1
+   python .\hello_world\receive.py
+   python .\hello_world\send.py
    ```
 
 2. work_queues
@@ -70,10 +71,11 @@ rabbitmqctl list_bindings
    ```
 
    ```
-   - docker-compose up --build
-   - python .\work_queues\worker.py                # consumer1
-   - python .\work_queues\worker.py                # consumer2
-   - python .\work_quaes\new_task.py <message>     # где количество точек в message устанавливает задержку времени в секундах которое worker будет ожидать.
+   docker-compose up --build
+   .\env\Scripts\Activate.ps1
+   python .\work_queues\worker.py                # consumer1
+   python .\work_queues\worker.py                # consumer2
+   python .\work_quaes\new_task.py <message>     # где количество точек в message устанавливает задержку времени в секундах которое worker будет ожидать.
    ```
 
 3. publish_subscribe
@@ -82,18 +84,49 @@ rabbitmqctl list_bindings
    ТУт будет использован обменик (exchange). Производитель может отправлять сообщения только на обменник. Обменник (exchange) — это очень простая вещь, с одной стороны, он получает сообщения от производителей, а с другой — отправляет их в очереди. Обменник должен точно знать, что делать с полученным сообщением.
 
    ```
-                           -----> queue1
-                           |
-       publisher -> exchange
-                           |
-                           -----> queue2
+                                   -----> queue1----> consumer1
+                                   |
+       publisher -> exchange(fanout)
+                                   |
+                                   -----> queue2----> consumer2
 
    ```
 
    ```
-   - docker-compose up --build
-   - python .\publish_subscribe\subscriber.py                               # consumer1
-   - python .\publish_subscribe\subscriber.py                               # consumer2
-   - python .\publish_subscribe\subscriber.py logs_from_rabbit.log        # consumer3
-   - python .\publish_subscribe\publisher.py <message>                      # где количество точек в message устанавливает задержку времени в секундах которое worker будет ожидать.
+   docker-compose up --build
+   .\env\Scripts\Activate.ps1
+
+   python .\publish_subscribe\subscriber.py                               # consumer1
+   python .\publish_subscribe\subscriber.py                               # consumer2
+   python .\publish_subscribe\subscriber.py logs_from_rabbit.log          # consumer3
+
+   python .\publish_subscribe\publisher.py <message>                      # где количество точек в message устанавливает задержку времени в секундах которое worker будет ожидать.
+   ```
+
+
+4. routing
+
+   Сообщение будет отправлено в очереди где routing_key(queue-exchange) соответствует routing_key сообщения.
+   ```
+                                   ---(routing_key = error)--> queue1 (binding_key=error)----> consumer1
+                                   |
+       publisher -> exchange(direct)
+                                   |
+                                   ---(routing_key = info)    --> queue2 (binding_key=info)------
+                                   |                                                             |---> consumer2
+                                   ---(routing_key = warning) --> queue3 (binding_key=warning)---
+   ```
+
+   ```
+   docker-compose up --build
+   .\env\Scripts\Activate.ps1
+
+   # запуск потребителей
+   python .\routing\consumer.py -t error -f error_log.txt   # consumer1 обрабатывает сообщения error
+   python .\routing\consumer.py -t 'info warning'           # consumer2 обрабатывает сообщения info warning
+
+   # запуск отправителя
+   python .\routing\publisher.py -t error -m 'error msg'
+   python .\routing\publisher.py -t info -m 'info msg'
+   python .\routing\publisher.py -t warning -m 'warning msg'
    ```

@@ -112,9 +112,9 @@ rabbitmqctl list_bindings
                                    |
        publisher -> exchange(direct)
                                    |
-                                   ---(routing_key = info)    --> queue2 (binding_key=info)------
-                                   |                                                             |---> consumer2
-                                   ---(routing_key = warning) --> queue3 (binding_key=warning)---
+                                   ---(routing_key = info)    ---
+                                   |                            |--->  queue2 (binding_key='info warning') ---> consumer2
+                                   ---(routing_key = warning) ---
    ```
 
    ```
@@ -130,3 +130,43 @@ rabbitmqctl list_bindings
    python .\routing\publisher.py -t info -m 'info msg'
    python .\routing\publisher.py -t warning -m 'warning msg'
    ```
+
+5. topic
+
+   В этом проекте мы будем связывать Обменник с Очередью посредством routing_key но в routing_key мы будем передавать паттерн.
+   Таким образом мы добавим гибкости Подписчику.
+
+   Есть следующие шаблоны:
+
+      '*' (звездочка) - может заменять ровно одно слово.
+
+      '#' (решетка) - может заменять ноль или более слов.
+
+
+   ```
+                                     ---(routing_key = lazy.#)----------> queue1 (binding_key=lazy.#)----------------- ---> consumer1
+                                     |
+       publisher -> exchange(topic)--
+                                     |
+                                     ---(routing_key = *.orange.*) ----
+                                     |                                |--> queue2 (binding_key= '*.orange.* fast.*.*')----> consumer2
+                                     ---(routing_key = fast.*.*)   ----
+                                     |
+                                     ---(routing_key = *.*.rabbit)-------> queue3 (binding_key= *.*.rabbit)----------------> consumer3
+
+   ```
+
+   ```
+   docker-compose up --build
+   .\env\Scripts\Activate.ps1
+
+   # запуск потребителей
+   python .\topic\consumer.py
+   python .\topic\consumer.py -t '*.orange.* fast.#'
+   python .\topic\consumer.py -t *.*.rabbit
+
+   # запуск источника
+   python .\topic\publisher.py -t fast.red.rabbit -m 'this is fast animal'
+   ```
+
+   NOTE: сообщение ('this is fast animal') получат consumer2 и consumer3 т.к. они подписаны  по шаблону (fast и rabbit)

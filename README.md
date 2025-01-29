@@ -209,3 +209,30 @@ rabbitmqctl list_bindings
    python .\rpc_pattern\server.py --queue 'rpc_bad_test'
 
    ```
+
+
+7. stream
+
+   Поток — это абстракция журнала с возможностью только добавления, которая позволяет многократно использовать сообщения до истечения срока их действия. Рекомендуется всегда определять политику хранения. В приведенном выше примере размер потока ограничен 5 ГиБ.
+   ```
+
+       publisher ----> rabbitMq_stream() <---- consumer
+
+   ```
+
+   ```
+   # python 3.9>=
+   pip install rstream
+
+   docker run -it --rm --name rabbitmq -p 5552:5552 -p 15672:15672 -p 5672:5672  -e RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS='-rabbitmq_stream advertised_host localhost'  rabbitmq:3.13
+   docker exec rabbitmq rabbitmq-plugins enable rabbitmq_stream rabbitmq_stream_management
+   .\env\Scripts\Activate.ps1
+
+
+   # запуск consumer
+   python .\stream\receive.p
+
+   # запуск publisher
+   python .\stream\send.py
+
+   ```

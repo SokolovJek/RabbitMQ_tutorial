@@ -103,10 +103,10 @@ rabbitmqctl list_bindings
    python .\publish_subscribe\publisher.py <message>                      # где количество точек в message устанавливает задержку времени в секундах которое worker будет ожидать.
    ```
 
-
 4. routing
 
    Сообщение будет отправлено в очереди где routing_key(queue-exchange) соответствует routing_key сообщения.
+
    ```
                                    ---(routing_key = error)--> queue1 (binding_key=error)----> consumer1
                                    |
@@ -138,10 +138,9 @@ rabbitmqctl list_bindings
 
    Есть следующие шаблоны:
 
-      '*' (звездочка) - может заменять ровно одно слово.
+   '\*' (звездочка) - может заменять ровно одно слово.
 
-      '#' (решетка) - может заменять ноль или более слов.
-
+   '#' (решетка) - может заменять ноль или более слов.
 
    ```
                                      ---(routing_key = lazy.#)----------> queue1 (binding_key=lazy.#)----------------- ---> consumer1
@@ -169,4 +168,44 @@ rabbitmqctl list_bindings
    python .\topic\publisher.py -t fast.red.rabbit -m 'this is fast animal'
    ```
 
-   NOTE: сообщение ('this is fast animal') получат consumer2 и consumer3 т.к. они подписаны  по шаблону (fast и rabbit)
+   NOTE: сообщение ('this is fast animal') получат consumer2 и consumer3 т.к. они подписаны по шаблону (fast и rabbit)
+
+6. rpc_pattern
+
+   В этом руководстве мы будем использовать RabbitMQ для создания системы RPC: клиента и масштабируемого сервера RPC.
+   Сделаем как хороший пример (.\rpc_pattern\client.py) так и не очень (.\rpc_pattern\client_bad_practice.py).
+   Плохой поскольку будет создаваться очередь обратных вызовов для каждого запроса RPC.
+   Лучше создать одну очередь обратных вызовов для каждого клиента и там создавать хот миллион этих вызовов.
+
+   ```
+   # клиент подписывается на свою очередь (callback_name_queue) и делает запрос (публикует) в основную очередь (main_rpc), при запросе указывает
+   # имя Очереди куда нужно слать ответ (reply_to=callback_name_queue).
+   # Сервер подписывается на очередь (main_rpc) и ждет сообщений. При получении, шлет в указанную в сообщении очередь
+
+       client -> create_queue() -> consuming(queue_name) -> call_rpc(queue='main_queue', reply_to='queue_name') ---> server_rpc -> do_business_logic() -----
+                                           ^                                                                                                               |
+                                           |                                                                                                               |
+                                           ----------------------------------------------------------------------------------------------------------------|
+
+   ```
+
+   ```
+   docker-compose up --build
+   .\env\Scripts\Activate.ps1
+
+   #### ------------------------------       хороший пример
+   # запуск клиента (плохой пример)
+   python .\rpc_pattern\client.py -t 10
+
+   # запуск rpc сервера (плохой пример)
+   python .\rpc_pattern\server.py --queue rpc_good_test
+
+
+   #### ------------------------------       плохой пример
+   # запуск клиента
+   python .\rpc_pattern\client_bad_practice.py -t 10
+
+   # запуск rpc сервера
+   python .\rpc_pattern\server.py --queue 'rpc_bad_test'
+
+   ```
